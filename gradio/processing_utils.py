@@ -17,6 +17,7 @@ import httpx
 import numpy as np
 from gradio_client import utils as client_utils
 from PIL import Image, ImageOps, PngImagePlugin
+import piexif
 
 from gradio import utils, wasm_utils
 from gradio.data_classes import FileData, GradioModel, GradioRootModel
@@ -65,6 +66,9 @@ def encode_plot_to_base64(plt):
     base64_str = str(base64.b64encode(bytes_data), "utf-8")
     return "data:image/png;base64," + base64_str
 
+def get_pil_exif_bytes(pil_image):
+    if 'exif' in pil_image.info:
+        return pil_image.info['exif']
 
 def get_pil_metadata(pil_image):
     # Copy any text-only metadata
@@ -78,7 +82,10 @@ def get_pil_metadata(pil_image):
 
 def encode_pil_to_bytes(pil_image, format="png"):
     with BytesIO() as output_bytes:
-        pil_image.save(output_bytes, format, pnginfo=get_pil_metadata(pil_image))
+        if format == "png":
+            pil_image.save(output_bytes, format, pnginfo=get_pil_metadata(pil_image))
+        else:
+            pil_image.save(output_bytes, format, exif=get_pil_exif_bytes(pil_image))
         return output_bytes.getvalue()
 
 
